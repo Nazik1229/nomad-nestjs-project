@@ -3,12 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { UserDocument } from '../database/models/user.model';
 import { CreateUserDto, LoginUserDto } from './dto';
-import { compareHash } from '../../helpers/utils/utils';
+import { comparePassword } from '../../helpers/utils/utils';
 
 @Injectable()
 export class AuthService {
   private readonly maxTry = 3;
-  private readonly loginBlock = 60000;
+  private readonly loginBlock = 10 * 60 * 1000;
 
   constructor(
     private readonly usersService: UsersService,
@@ -32,7 +32,7 @@ export class AuthService {
       if (user) {
         return user;
       } else {
-        return 'User not found';
+        return 'Пользователь не найден';
       }
     } catch (error) {
       return error.data;
@@ -48,14 +48,15 @@ export class AuthService {
       user.loginTry = 0;
     }
 
-    if (user.loginTry >= this.maxTry || (user.timeUntil && user.timeUntil.getTime() > Date.now())) {
-      const timeUntilUnlock = new Date(user.timeUntil.getTime() - Date.now());
+    if (user.loginTry >= this.maxTry || user.timeUntil && user.timeUntil.getTime() > Date.now()) {
+      const timeUnlock = new Date(Date.now() + this.loginBlock);
+      user.loginTry = 0;
       return {
-        message: `Аккаунт заблокирован. Попробуйте позже (${timeUntilUnlock.getMinutes()}) `,
+        message: `Аккаунт заблокирован. Попробуйте позже (${timeUnlock}) `,
       };
     }
 
-    const matched = await compareHash(userData.password, user.password);
+    const matched = await comparePassword(userData.password, user.password);
       if (matched) {
         user.loginTry = 0;
         user.timeUntil = null;
@@ -69,12 +70,14 @@ export class AuthService {
 
       } else {
         user.loginTry++;
+        await user.save();
 
         if (user.loginTry >= this.maxTry) {
           user.timeUntil = new Date(Date.now() + this.loginBlock);
           user.loginTry = 0;
           await user.save();
         }
+        return "Password incorrect";
     };
   }
 }

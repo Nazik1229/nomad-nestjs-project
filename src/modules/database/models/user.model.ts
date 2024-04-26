@@ -4,7 +4,6 @@ import { Types } from 'mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { CollectionName } from '../../../helpers/enums/collection-names.enum';
 import { Roles } from '../../../helpers/enums/roles.enum';
-import { genHash, genSalt } from '../../../helpers/utils/utils';
 import { lcov } from 'node:test/reporters';
 import { SubjectDocument } from './subject.model';
 
@@ -47,7 +46,7 @@ export class User {
   subject_ids: SubjectDocument[];
   
   @ApiProperty({ type: 'number' })
-  @Prop({ default: 0 })
+  @Prop()
   loginTry: number;
 
   @ApiProperty({ type: 'date' })
@@ -59,8 +58,3 @@ export type UserDocument = User & mongoose.Document;
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-UserSchema.pre('save', async function () {
-  if (!this.password) return;
-  const salt = await genSalt();
-  this.password = await genHash(this.password, salt);
-});
