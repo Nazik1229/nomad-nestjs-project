@@ -1,14 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserRepository } from '../database/repositories/user.repository';
 import { UserDocument } from '../database/models/user.model';
 import { CrudService } from '../../helpers/crud.service';
 import { UpdateUserDto } from './dto';
 import { ObjectId } from '../../helpers/types/objectid.type';
 import { Roles } from '../../helpers/enums/roles.enum';
+import { SubjectRepository } from '../database/repositories/subject.repository';
 
 @Injectable()
 export class UsersService extends CrudService<UserDocument> {
-  constructor(readonly userRepository: UserRepository) {
+  constructor(
+    readonly userRepository: UserRepository,
+    readonly subjectRepository: SubjectRepository,
+  ) {
     super(userRepository);
   }
   async createUser(createUserDto): Promise<UserDocument> {
@@ -24,6 +28,7 @@ export class UsersService extends CrudService<UserDocument> {
       return await this.userRepository.create({
         ...createUserDto,
         role: Roles.TEACHER,
+        subject_ids: [],
       });
     } catch (error) {
       return error.message;
@@ -59,12 +64,27 @@ export class UsersService extends CrudService<UserDocument> {
 
   async findAllActiveUsers(): Promise<UserDocument[]> {
     try {
-      const query = {
-        is_deleted: false,
-        role: Roles.STUDENT,
-      };
-      
-      return await this.userRepository.find({ query });
+      // const query = {
+      //   is_deleted: false,
+      //   role: Roles.STUDENT,
+      // };
+
+      return await this.userRepository.find({});
+    } catch (error) {
+      return error.message;
+    }
+  }
+
+  async assingTeacher(teacherId, subjectId): Promise<UserDocument> {
+    try {
+      const teacher = await this.userRepository.findById(teacherId);
+      const subject = await this.subjectRepository.findById(subjectId);
+      if (!teacher && !subject) {
+        throw new BadRequestException('Неверные данные');
+      }
+      teacher.subject_ids.push(subject);
+      await teacher.save();
+      return teacher;
     } catch (error) {
       return error.message;
     }

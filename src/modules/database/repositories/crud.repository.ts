@@ -12,7 +12,6 @@ export class CrudRepository<Document> implements Repository<Document> {
 
   async find(options: FindOptionsInterface<Document>): Promise<Document[]> {
     const { query, skip, limit } = options;
-
     return this.model.find(query).skip(skip).limit(limit);
   }
 

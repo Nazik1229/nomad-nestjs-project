@@ -9,7 +9,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { GroupsService } from './groups.service';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CreateGroupDto } from './dto';
 import { GroupDocument } from '../database/models/group.model';
 import { ObjectId } from '../../helpers/types/objectid.type';
@@ -19,6 +24,8 @@ import { Role } from '../../helpers/decorators/role.decorator';
 import { Roles } from '../../helpers/enums/roles.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+// @ApiBearerAuth()
+// @UseGuards(JwtAuthGuard)
 @ApiTags('Groups')
 @Controller('groups')
 export class GroupsController {
@@ -30,10 +37,8 @@ export class GroupsController {
     return await this.groupsService.createGroup(createGroupDto);
   }
 
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Получить весь список групп' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Role(Roles.ADMIN)
+  // @Role(Roles.ADMIN)
   @Get('all')
   async getAllGroups(): Promise<GroupDocument[]> {
     const query = {

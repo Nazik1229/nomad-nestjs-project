@@ -4,6 +4,9 @@ import { Types } from 'mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { CollectionName } from '../../../helpers/enums/collection-names.enum';
 import { Roles } from '../../../helpers/enums/roles.enum';
+import { genHash, genSalt } from '../../../helpers/utils/utils';
+import { lcov } from 'node:test/reporters';
+import { SubjectDocument } from './subject.model';
 
 @Schema({
   collection: CollectionName.User,
@@ -38,8 +41,18 @@ export class User {
   @ApiProperty({ type: 'boolean' })
   @Prop({ default: false })
   is_deleted: boolean;
+
+  @ApiProperty()
+  @Prop({ required: false })
+  subject_ids: SubjectDocument[];
 }
 
 export type UserDocument = User & mongoose.Document;
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.pre('save', async function () {
+  if (!this.password) return;
+  const salt = await genSalt();
+  this.password = await genHash(this.password, salt);
+});

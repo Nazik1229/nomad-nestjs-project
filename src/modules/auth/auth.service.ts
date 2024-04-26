@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { UserDocument } from '../database/models/user.model';
 import { CreateUserDto, LoginUserDto } from './dto';
+import { compareHash } from '../../helpers/utils/utils';
 
 @Injectable()
 export class AuthService {
@@ -24,11 +25,16 @@ export class AuthService {
     password: string,
   ): Promise<UserDocument | string> {
     try {
-      const user = await this.usersService.findOne({ email, password });
+      const user = await this.usersService.findOne({ email });
       if (!user) {
         return null;
       }
-      return user;
+      const isMatch = await compareHash(password, user.password);
+
+      if (!isMatch) {
+        return null;
+      }
+      return user
     } catch (error) {
       return error.data;
     }

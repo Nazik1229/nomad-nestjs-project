@@ -22,7 +22,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../helpers/guards/roles.guard';
 import { Role } from '../../helpers/decorators/role.decorator';
 import { Roles } from '../../helpers/enums/roles.enum';
+import { IdValidationPipe } from '../../helpers/pipes/id-validation.pipe';
 
+// @ApiBearerAuth()
+// @UseGuards(JwtAuthGuard)
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
@@ -45,9 +48,7 @@ export class UsersController {
     return await this.usersService.deleteUserById(userId);
   }
 
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Получить одного пользователя по айди' })
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiParam({ name: 'id', type: 'string', required: true })
   async getUserById(@Param() userId): Promise<UserDocument> {
@@ -60,12 +61,22 @@ export class UsersController {
     return await this.usersService.findAllActiveUsers();
   }
 
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Добавить учителя' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Role(Roles.ADMIN)
+  // @UseGuards(RolesGuard)
+  // @Role(Roles.ADMIN)
   @Post('teacher')
   async registerTeacher(@Body() createTeacherDto: CreateTeacherDto) {
     return await this.usersService.createTeacher(createTeacherDto);
+  }
+
+  @ApiOperation({ summary: 'Добавить предмет учителю' })
+  @Put(':teacherId/:subjectId')
+  @ApiParam({ name: 'teacherId', type: 'string', required: true })
+  @ApiParam({ name: 'subjectId', type: 'string', required: true })
+  async addSubjectToTeacher(
+    @Param('teacherId', IdValidationPipe) teacherId: ObjectId,
+    @Param('subjectId', IdValidationPipe) subjectId: ObjectId,
+  ) {
+    return await this.usersService.assingTeacher(teacherId, subjectId);
   }
 }
