@@ -45,6 +45,14 @@ export class User {
   @ApiProperty()
   @Prop({ required: false })
   subject_ids: SubjectDocument[];
+  
+  @ApiProperty({ type: 'number' })
+  @Prop({ default: 0 })
+  loginTry: number;
+
+  @ApiProperty({ type: 'date' })
+  @Prop({ default: null })
+  timeUntil: Date;
 }
 
 export type UserDocument = User & mongoose.Document;
